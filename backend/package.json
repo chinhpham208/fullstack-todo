@@ -1,10 +1,12 @@
 {
   "name": "fullstack-todo-backend",
   "version": "1.0.0",
-  "main": "app.js",
+  "main": "dist/app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "tsx watch app.ts",
+    "build": "tsc --project tsconfig.json",
+    "start": "node dist/app.js",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -19,6 +21,14 @@
     "morgan": "^1.10.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^25.4.0",
+    "nodemon": "^3.0.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
