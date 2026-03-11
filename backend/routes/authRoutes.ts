@@ -1,12 +1,13 @@
-const express = require("express");
-const router = express.Router();
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { body, validationResult } = require("express-validator");
-const User = require("../models/User");
-const auth = require("../middleware/auth");
+import { Router, Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { body, validationResult } from "express-validator";
+import User from "../models/User";
+import auth from "../middleware/auth";
 
-const validate = (req, res) => {
+const router = Router();
+
+const validate = (req: Request, res: Response): boolean => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({ error: errors.array()[0].msg });
@@ -27,15 +28,16 @@ const loginRules = [
 ];
 
 // REGISTER
-router.post("/register", registerRules, async (req, res) => {
+router.post("/register", registerRules, async (req: Request, res: Response): Promise<void> => {
   if (!validate(req, res)) return;
 
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password } = req.body as { name: string; email: string; password: string };
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: "Email already in use!" });
+      res.status(400).json({ error: "Email already in use!" });
+      return;
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -44,64 +46,61 @@ router.post("/register", registerRules, async (req, res) => {
     const newUser = new User({ name, email, password: hashedPassword });
     await newUser.save();
 
-    const token = jwt.sign(
-      { userId: newUser._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
 
     res.status(201).json({
       message: "Registration successful!",
       token,
       user: { id: newUser._id, name: newUser.name, email: newUser.email },
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Server error, please try again." });
   }
 });
 
 // LOGIN
-router.post("/login", loginRules, async (req, res) => {
+router.post("/login", loginRules, async (req: Request, res: Response): Promise<void> => {
   if (!validate(req, res)) return;
 
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body as { email: string; password: string };
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ error: "Email not found!" });
+      res.status(400).json({ error: "Email not found!" });
+      return;
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ error: "Incorrect password!" });
+      res.status(400).json({ error: "Incorrect password!" });
+      return;
     }
 
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
 
     res.json({
       message: "Login successful!",
       token,
       user: { id: user._id, name: user.name, email: user.email },
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Server error, please try again." });
   }
 });
 
 // GET CURRENT USER
-router.get("/me", auth, async (req, res) => {
+router.get("/me", auth, async (req: Request, res: Response): Promise<void> => {
   try {
     const user = await User.findById(req.user.userId).select("-password");
-    if (!user) return res.status(404).json({ error: "User not found!" });
+    if (!user) {
+      res.status(404).json({ error: "User not found!" });
+      return;
+    }
     res.json(user);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Server error, please try again." });
   }
 });
 
-module.exports = router;
+export default router;

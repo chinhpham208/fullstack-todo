@@ -1,10 +1,12 @@
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const rateLimit = require("express-rate-limit");
+import "dotenv/config";
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import rateLimit from "express-rate-limit";
+import authRoutes from "./routes/authRoutes";
+import todoRoutes from "./routes/todoRoutes";
 
 // Validate required env vars on startup
 const requiredEnvVars = ["MONGODB_URI", "JWT_SECRET"];
@@ -15,20 +17,17 @@ requiredEnvVars.forEach((key) => {
   }
 });
 
-const authRoutes = require("./routes/authRoutes");
-const todoRoutes = require("./routes/todoRoutes");
-
 const app = express();
 
 // Security headers
 app.use(helmet());
 
 // Logging
-app.use(morgan("dev"));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
-// CORS — restrict to frontend origin
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL, "http://localhost:5173"]
+// CORS
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? [...process.env.ALLOWED_ORIGINS.split(","), "http://localhost:5173"]
   : ["http://localhost:5173"];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
@@ -38,7 +37,7 @@ app.use(express.json({ limit: "10kb" }));
 
 // Rate limiting on auth routes
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 20,
   message: { error: "Too many requests, please try again later." },
 });
@@ -49,12 +48,12 @@ app.use("/todos", todoRoutes);
 
 // Connect MongoDB
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGODB_URI!)
   .then(() => console.log("✅ MongoDB connected!"))
   .catch((err) => console.log("❌ MongoDB connection error:", err));
 
-// Health check — used to ping and keep server alive on Render free tier
-app.get("/ping", (req, res) => {
+// Health check
+app.get("/ping", (_req, res) => {
   res.json({ message: "Server is running! 🚀" });
 });
 
