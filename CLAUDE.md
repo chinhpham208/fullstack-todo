@@ -58,6 +58,7 @@ MERN stack todo application with JWT authentication.
 - `/style` — Restyle/improve UI components
 
 ### Workflow
+- `/git-flow` — standard Git Flow: branches, PRs, releases
 - `/dev` — start frontend + backend dev servers
 - `/build` — build frontend for production
 - `/env-setup` — set up environment variables (local + production)
@@ -69,3 +70,10 @@ MERN stack todo application with JWT authentication.
 - `/api-test` — test all API endpoints with curl
 - `/debug` — diagnose and fix common issues
 - `/deploy-check` — pre-deployment checklist
+
+## Git Branch Structure
+- `main` — production only, never commit directly
+- `develop` — integration branch, base for all features
+- `feature/*` — new features (PR → develop)
+- `fix/*` — bug fixes (PR → develop)
+- `hotfix/*` — urgent fixes (PR → main, then merge back to develop)
