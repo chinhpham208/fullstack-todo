@@ -1,0 +1,15 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every 10 minutes
+
+jobs:
+  ping:
+    name: Ping backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /ping
+        run: |
+          curl -sf https://fullstack-todo-backend-n1vv.onrender.com/ping \
+            || echo "Ping failed — server may be cold starting"
