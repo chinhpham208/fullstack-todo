@@ -2,7 +2,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { AxiosError } from "axios";
 import api from "../api";
+import type { AuthResponse, LoginFormData } from "../types";
 
 const schema = yup.object({
   email: yup.string().email("Please enter a valid email address!").required("Email is required!"),
@@ -16,16 +18,17 @@ export default function Login() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: yupResolver(schema) });
+  } = useForm<LoginFormData>({ resolver: yupResolver(schema) });
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: LoginFormData) => {
     try {
-      const res = await api.post("/auth/login", data);
+      const res = await api.post<AuthResponse>("/auth/login", data);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/");
     } catch (err) {
-      setError("root", { message: err.response?.data?.error || "Login failed!" });
+      const axiosErr = err as AxiosError<{ error: string }>;
+      setError("root", { message: axiosErr.response?.data?.error || "Login failed!" });
     }
   };
 
@@ -70,7 +73,7 @@ export default function Login() {
   );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
