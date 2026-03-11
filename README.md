@@ -1,94 +1,135 @@
 # 📝 Fullstack Todo App
 
-Ứng dụng quản lý công việc cá nhân. Xây dựng với React + Node.js + MongoDB.
+A personal task management app built with React + Node.js + MongoDB.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-- **Frontend:** React + Vite + React Router + Axios
-- **Backend:** Node.js + Express + JWT Auth
-- **Database:** MongoDB Atlas
+- **Frontend:** React 18 + Vite + React Router + Axios + React Hook Form + Yup
+- **Backend:** Node.js + Express + JWT Auth + express-validator + Helmet
+- **Database:** MongoDB (local) / MongoDB Atlas (production)
 - **Deploy:** Vercel (frontend) + Render (backend)
 
 ---
 
-## 🚀 Chạy Local
+## Local Development
+
+### Prerequisites
+- Node.js 18+
+- MongoDB installed locally (`brew install mongodb-community`)
 
 ### 1. Clone repo
 ```bash
-git clone https://github.com/USERNAME/fullstack-todo.git
+git clone https://github.com/chinhpham208/fullstack-todo.git
 cd fullstack-todo
 ```
 
-### 2. Chạy Backend
+### 2. Setup Backend
 ```bash
 cd backend
 npm install
+cp .env.example .env
 ```
 
-Tạo file `.env` trong thư mục `backend/`:
+Edit `backend/.env`:
 ```
-MONGODB_URI=mongodb+srv://admin:YOUR_PASSWORD@cluster0.scoz1sx.mongodb.net/todoapp?appName=Cluster0
-JWT_SECRET=bat_ky_chuoi_nao_kho_doan
+MONGODB_URI=mongodb://localhost:27017/todoapp
+JWT_SECRET=<generate with: openssl rand -base64 32>
 PORT=3000
 ```
 
 ```bash
 npm run dev
-# Server chạy tại http://localhost:3000
+# Server running at http://localhost:3000
 ```
 
-### 3. Chạy Frontend
+### 3. Setup Frontend
 ```bash
 cd frontend
 npm install
+cp .env.example .env
+# VITE_API_URL=http://localhost:3000 (already set in .env.example)
 npm run dev
-# App chạy tại http://localhost:5173
+# App running at http://localhost:5173
+```
+
+### 4. Start MongoDB
+```bash
+brew services start mongodb/brew/mongodb-community
 ```
 
 ---
 
-## 🌍 Deploy
+## API Reference
 
-### Backend → Render.com
-1. Vào render.com → New Web Service → Connect GitHub
-2. Chọn repo này, thư mục `backend`
-3. Build Command: `npm install`
-4. Start Command: `node app.js`
-5. Thêm Environment Variables:
-   - `MONGODB_URI` = connection string MongoDB của bạn
-   - `JWT_SECRET` = chuỗi bí mật bất kỳ
-   - `PORT` = 3000
-6. Deploy → copy URL dạng `https://ten-app.onrender.com`
-
-### Frontend → Vercel.com
-1. Vào vercel.com → New Project → Import GitHub repo
-2. Root Directory: `frontend`
-3. Thêm Environment Variable:
-   - `VITE_API_URL` = URL Render vừa copy
-4. Deploy!
-
-### Giữ Server Render Không Ngủ (Free Tier)
-1. Vào cron-job.org → Tạo tài khoản miễn phí
-2. Tạo cronjob ping URL: `https://ten-app.onrender.com/ping`
-3. Đặt thời gian: mỗi 10 phút
-→ Server sẽ không bị tắt!
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| POST | /auth/register | No | Register new user |
+| POST | /auth/login | No | Login |
+| GET | /auth/me | Yes | Get current user |
+| GET | /todos | Yes | Get all todos |
+| POST | /todos | Yes | Create todo |
+| PUT | /todos/:id | Yes | Update todo |
+| DELETE | /todos/:id | Yes | Delete todo |
+| GET | /ping | No | Health check |
 
 ---
 
-## 📁 Cấu Trúc
+## Deployment
+
+### Backend → Render.com
+1. Go to render.com → New Web Service → Connect GitHub
+2. Select this repo, set root directory to `backend`
+3. Build Command: `npm install`
+4. Start Command: `node app.js`
+5. Add Environment Variables:
+   - `MONGODB_URI` = MongoDB Atlas connection string
+   - `JWT_SECRET` = strong random string (`openssl rand -base64 32`)
+   - `FRONTEND_URL` = your Vercel frontend URL
+6. Deploy → copy the URL (e.g. `https://your-app.onrender.com`)
+
+### Frontend → Vercel.com
+1. Go to vercel.com → New Project → Import GitHub repo
+2. Root Directory: `frontend`
+3. Add Environment Variable:
+   - `VITE_API_URL` = your Render backend URL
+4. Deploy
+
+### Keep Render Server Alive (Free Tier)
+Set up a cron job at cron-job.org to ping `https://your-app.onrender.com/ping` every 10 minutes.
+
+---
+
+## Project Structure
 
 ```
 fullstack-todo/
 ├── backend/
-│   ├── models/       # User.js, Todo.js
-│   ├── routes/       # authRoutes.js, todoRoutes.js
-│   ├── middleware/   # xacThuc.js
-│   ├── .env          # Biến môi trường (không push GitHub!)
-│   └── app.js
-└── frontend/
-    ├── src/
-    │   ├── pages/    # DangNhap, DangKy, TrangChu
-    │   ├── api.js    # Axios config
-    │   └── App.jsx
-    └── index.html
+│   ├── middleware/     # auth.js — JWT verification
+│   ├── models/         # User.js, Todo.js
+│   ├── routes/         # authRoutes.js, todoRoutes.js
+│   ├── .env.example    # Environment variable template
+│   └── app.js          # Express server entry point
+├── frontend/
+│   ├── src/
+│   │   ├── pages/      # Login.jsx, Register.jsx, Home.jsx
+│   │   ├── api.js      # Axios instance with auth interceptor
+│   │   └── App.jsx     # Router and PrivateRoute
+│   └── index.html
+├── .claude/
+│   └── skills/         # Claude Code skills
+├── .github/
+│   └── pull_request_template.md
+└── CLAUDE.md           # Claude Code instructions
+```
+
+---
+
+## Git Workflow
+
+```
+main        ← production only
+develop     ← integration branch
+feature/*   ← new features (PR → develop)
+fix/*       ← bug fixes (PR → develop)
+hotfix/*    ← urgent fixes (PR → main)
 ```
