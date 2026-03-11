@@ -49,7 +49,23 @@ MERN stack todo application with JWT authentication.
 | GET | /ping | No | Health check |
 
 ## Available Skills
+
+### Development
+- `/frontend` — React/Vite expert: components, state, routing, styling
+- `/backend` — Express/Node.js expert: routes, middleware, auth
+- `/data` — MongoDB/Mongoose expert: schemas, queries, data modeling
+- `/ui` — UI/UX guidelines, design system, component patterns
+- `/style` — Restyle/improve UI components
+
+### Workflow
+- `/dev` — start frontend + backend dev servers
+- `/build` — build frontend for production
+- `/env-setup` — set up environment variables (local + production)
+- `/add-feature` — scaffold a new feature following project patterns
+
+### Quality
 - `/commit` — create a conventional git commit
 - `/review` — review code for security and quality
-- `/deploy-check` — pre-deployment checklist
 - `/api-test` — test all API endpoints with curl
+- `/debug` — diagnose and fix common issues
+- `/deploy-check` — pre-deployment checklist
