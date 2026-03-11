@@ -14,6 +14,10 @@ export default function Login() {
       setError("Please fill in all fields!");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address!");
+      return;
+    }
     try {
       setLoading(true);
       setError("");

@@ -22,12 +22,15 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { task } = req.body;
-    if (!task) {
+    if (!task || !task.trim()) {
       return res.status(400).json({ error: "Please enter a task!" });
+    }
+    if (task.trim().length > 200) {
+      return res.status(400).json({ error: "Task must be under 200 characters!" });
     }
 
     const newTodo = new Todo({
-      task,
+      task: task.trim(),
       owner: req.user.userId,
     });
     await newTodo.save();

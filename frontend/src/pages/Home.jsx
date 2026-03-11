@@ -5,6 +5,7 @@ import api from "../api";
 export default function Home() {
   const [todos, setTodos] = useState([]);
   const [newTask, setNewTask] = useState("");
+  const [taskError, setTaskError] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
@@ -27,13 +28,21 @@ export default function Home() {
   };
 
   const addTodo = async () => {
-    if (!newTask.trim()) return;
+    if (!newTask.trim()) {
+      setTaskError("Task cannot be empty!");
+      return;
+    }
+    if (newTask.trim().length > 200) {
+      setTaskError("Task must be under 200 characters!");
+      return;
+    }
+    setTaskError("");
     try {
-      const res = await api.post("/todos", { task: newTask });
+      const res = await api.post("/todos", { task: newTask.trim() });
       setTodos([res.data, ...todos]);
       setNewTask("");
     } catch (err) {
-      alert(err.response?.data?.error || "Error adding todo!");
+      setTaskError(err.response?.data?.error || "Error adding todo!");
     }
   };
 
@@ -41,8 +50,8 @@ export default function Home() {
     try {
       const res = await api.put(`/todos/${todo._id}`, { completed: !todo.completed });
       setTodos(todos.map((t) => (t._id === todo._id ? res.data : t)));
-    } catch (err) {
-      alert("Error updating todo!");
+    } catch {
+      setTaskError("Error updating todo!");
     }
   };
 
@@ -50,8 +59,8 @@ export default function Home() {
     try {
       await api.delete(`/todos/${id}`);
       setTodos(todos.filter((t) => t._id !== id));
-    } catch (err) {
-      alert("Error deleting todo!");
+    } catch {
+      setTaskError("Error deleting todo!");
     }
   };
 
@@ -100,15 +109,16 @@ export default function Home() {
         <div style={styles.addForm}>
           <input
             value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
+            onChange={(e) => { setNewTask(e.target.value); setTaskError(""); }}
             onKeyDown={(e) => e.key === "Enter" && addTodo()}
             placeholder="Enter new task... (Press Enter to add)"
-            style={styles.input}
+            style={{ ...styles.input, border: taskError ? "1px solid #e74c3c" : "1px solid #ddd" }}
           />
           <button onClick={addTodo} style={styles.addButton}>
             + Add
           </button>
         </div>
+        {taskError && <p style={styles.taskErrorText}>{taskError}</p>}
 
         {/* Todo list */}
         {loading ? (
@@ -245,6 +255,12 @@ const styles = {
     fontSize: 15,
     fontWeight: 600,
     whiteSpace: "nowrap",
+  },
+  taskErrorText: {
+    color: "#e74c3c",
+    fontSize: 13,
+    marginTop: -12,
+    marginBottom: 12,
   },
   loadingText: {
     textAlign: "center",

@@ -5,6 +5,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // REGISTER
 router.post("/register", async (req, res) => {
   try {
@@ -12,6 +14,15 @@ router.post("/register", async (req, res) => {
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: "Please fill in all fields!" });
+    }
+    if (name.trim().length < 2) {
+      return res.status(400).json({ error: "Name must be at least 2 characters!" });
+    }
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ error: "Please enter a valid email address!" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters!" });
     }
 
     const existingUser = await User.findOne({ email });
@@ -22,7 +33,7 @@ router.post("/register", async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({ name, email, password: hashedPassword });
+    const newUser = new User({ name: name.trim(), email, password: hashedPassword });
     await newUser.save();
 
     const token = jwt.sign(
@@ -48,6 +59,9 @@ router.post("/login", async (req, res) => {
 
     if (!email || !password) {
       return res.status(400).json({ error: "Please fill in all fields!" });
+    }
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ error: "Please enter a valid email address!" });
     }
 
     const user = await User.findOne({ email });
