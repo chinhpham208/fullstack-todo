@@ -1,17 +1,21 @@
 const express = require("express");
 const router = express.Router();
+const { body, validationResult } = require("express-validator");
 const Todo = require("../models/Todo");
 const auth = require("../middleware/auth");
 
 // All routes require authentication
 router.use(auth);
 
+const taskRules = [
+  body("task").trim().notEmpty().withMessage("Please enter a task!")
+    .isLength({ max: 200 }).withMessage("Task must be under 200 characters!"),
+];
+
 // GET ALL TODOS FOR USER
 router.get("/", async (req, res) => {
   try {
-    const todos = await Todo.find({ owner: req.user.userId }).sort({
-      createdAt: -1,
-    });
+    const todos = await Todo.find({ owner: req.user.userId }).sort({ createdAt: -1 });
     res.json(todos);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -19,18 +23,15 @@ router.get("/", async (req, res) => {
 });
 
 // ADD NEW TODO
-router.post("/", async (req, res) => {
-  try {
-    const { task } = req.body;
-    if (!task || !task.trim()) {
-      return res.status(400).json({ error: "Please enter a task!" });
-    }
-    if (task.trim().length > 200) {
-      return res.status(400).json({ error: "Task must be under 200 characters!" });
-    }
+router.post("/", taskRules, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
+  }
 
+  try {
     const newTodo = new Todo({
-      task: task.trim(),
+      task: req.body.task,
       owner: req.user.userId,
     });
     await newTodo.save();

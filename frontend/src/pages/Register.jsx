@@ -1,43 +1,32 @@
-import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import api from "../api";
 
-export default function Register() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+const schema = yup.object({
+  name: yup.string().trim().min(2, "Name must be at least 2 characters!").required("Name is required!"),
+  email: yup.string().email("Please enter a valid email address!").required("Email is required!"),
+  password: yup.string().min(6, "Password must be at least 6 characters!").required("Password is required!"),
+});
 
-  const handleRegister = async () => {
-    if (!name || !email || !password) {
-      setError("Please fill in all fields!");
-      return;
-    }
-    if (name.trim().length < 2) {
-      setError("Name must be at least 2 characters!");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Please enter a valid email address!");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters!");
-      return;
-    }
+export default function Register() {
+  const navigate = useNavigate();
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({ resolver: yupResolver(schema) });
+
+  const onSubmit = async (data) => {
     try {
-      setLoading(true);
-      setError("");
-      const res = await api.post("/auth/register", { name, email, password });
+      const res = await api.post("/auth/register", data);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.error || "Registration failed!");
-    } finally {
-      setLoading(false);
+      setError("root", { message: err.response?.data?.error || "Registration failed!" });
     }
   };
 
@@ -47,43 +36,43 @@ export default function Register() {
         <h1 style={styles.logo}>📝 Todo App</h1>
         <h2 style={styles.title}>Register</h2>
 
-        {error && <p style={styles.errorText}>{error}</p>}
+        {errors.root && <p style={styles.errorText}>{errors.root.message}</p>}
 
         <input
           type="text"
           placeholder="Full name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={styles.input}
+          {...register("name")}
+          style={{ ...styles.input, border: errors.name ? "1px solid #e74c3c" : "1px solid #ddd" }}
         />
+        {errors.name && <p style={styles.fieldError}>{errors.name.message}</p>}
+
         <input
           type="email"
           placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={styles.input}
+          {...register("email")}
+          style={{ ...styles.input, border: errors.email ? "1px solid #e74c3c" : "1px solid #ddd" }}
         />
+        {errors.email && <p style={styles.fieldError}>{errors.email.message}</p>}
+
         <input
           type="password"
           placeholder="Password (at least 6 characters)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleRegister()}
-          style={styles.input}
+          {...register("password")}
+          style={{ ...styles.input, border: errors.password ? "1px solid #e74c3c" : "1px solid #ddd" }}
         />
+        {errors.password && <p style={styles.fieldError}>{errors.password.message}</p>}
+
         <button
-          onClick={handleRegister}
-          disabled={loading}
-          style={{ ...styles.button, opacity: loading ? 0.7 : 1 }}
+          onClick={handleSubmit(onSubmit)}
+          disabled={isSubmitting}
+          style={{ ...styles.button, opacity: isSubmitting ? 0.7 : 1 }}
         >
-          {loading ? "Registering..." : "Register"}
+          {isSubmitting ? "Registering..." : "Register"}
         </button>
 
         <p style={styles.link}>
           Already have an account?{" "}
-          <Link to="/login" style={styles.linkAnchor}>
-            Login
-          </Link>
+          <Link to="/login" style={styles.linkAnchor}>Login</Link>
         </p>
       </div>
     </div>
@@ -107,17 +96,8 @@ const styles = {
     maxWidth: 400,
     boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
   },
-  logo: {
-    textAlign: "center",
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  title: {
-    textAlign: "center",
-    color: "#333",
-    marginBottom: 24,
-    fontWeight: 600,
-  },
+  logo: { textAlign: "center", fontSize: 32, marginBottom: 8 },
+  title: { textAlign: "center", color: "#333", marginBottom: 24, fontWeight: 600 },
   errorText: {
     color: "#e74c3c",
     background: "#fde8e8",
@@ -126,12 +106,12 @@ const styles = {
     marginBottom: 16,
     fontSize: 14,
   },
+  fieldError: { color: "#e74c3c", fontSize: 12, marginTop: -8, marginBottom: 8 },
   input: {
     display: "block",
     width: "100%",
     padding: "12px 14px",
-    marginBottom: 12,
-    border: "1px solid #ddd",
+    marginBottom: 4,
     borderRadius: 8,
     fontSize: 16,
     boxSizing: "border-box",
@@ -148,16 +128,8 @@ const styles = {
     fontSize: 16,
     cursor: "pointer",
     fontWeight: 600,
-    marginTop: 8,
+    marginTop: 12,
   },
-  link: {
-    textAlign: "center",
-    marginTop: 20,
-    color: "#666",
-    fontSize: 14,
-  },
-  linkAnchor: {
-    color: "#667eea",
-    fontWeight: 600,
-  },
+  link: { textAlign: "center", marginTop: 20, color: "#666", fontSize: 14 },
+  linkAnchor: { color: "#667eea", fontWeight: 600 },
 };

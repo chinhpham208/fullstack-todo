@@ -2,28 +2,36 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { body, validationResult } = require("express-validator");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const handleValidation = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
+  }
+  return null;
+};
+
+const registerRules = [
+  body("name").trim().isLength({ min: 2 }).withMessage("Name must be at least 2 characters!"),
+  body("email").isEmail().normalizeEmail().withMessage("Please enter a valid email address!"),
+  body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters!"),
+];
+
+const loginRules = [
+  body("email").isEmail().normalizeEmail().withMessage("Please enter a valid email address!"),
+  body("password").notEmpty().withMessage("Please enter your password!"),
+];
 
 // REGISTER
-router.post("/register", async (req, res) => {
+router.post("/register", registerRules, async (req, res) => {
+  const validationError = handleValidation(req, res);
+  if (validationError) return;
+
   try {
     const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: "Please fill in all fields!" });
-    }
-    if (name.trim().length < 2) {
-      return res.status(400).json({ error: "Name must be at least 2 characters!" });
-    }
-    if (!EMAIL_REGEX.test(email)) {
-      return res.status(400).json({ error: "Please enter a valid email address!" });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters!" });
-    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -33,7 +41,7 @@ router.post("/register", async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({ name: name.trim(), email, password: hashedPassword });
+    const newUser = new User({ name, email, password: hashedPassword });
     await newUser.save();
 
     const token = jwt.sign(
@@ -53,16 +61,12 @@ router.post("/register", async (req, res) => {
 });
 
 // LOGIN
-router.post("/login", async (req, res) => {
+router.post("/login", loginRules, async (req, res) => {
+  const validationError = handleValidation(req, res);
+  if (validationError) return;
+
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: "Please fill in all fields!" });
-    }
-    if (!EMAIL_REGEX.test(email)) {
-      return res.status(400).json({ error: "Please enter a valid email address!" });
-    }
 
     const user = await User.findOne({ email });
     if (!user) {

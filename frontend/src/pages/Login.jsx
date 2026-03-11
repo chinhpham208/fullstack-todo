@@ -1,34 +1,31 @@
-import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import api from "../api";
 
-export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+const schema = yup.object({
+  email: yup.string().email("Please enter a valid email address!").required("Email is required!"),
+  password: yup.string().required("Password is required!"),
+});
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please fill in all fields!");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Please enter a valid email address!");
-      return;
-    }
+export default function Login() {
+  const navigate = useNavigate();
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({ resolver: yupResolver(schema) });
+
+  const onSubmit = async (data) => {
     try {
-      setLoading(true);
-      setError("");
-      const res = await api.post("/auth/login", { email, password });
+      const res = await api.post("/auth/login", data);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed!");
-    } finally {
-      setLoading(false);
+      setError("root", { message: err.response?.data?.error || "Login failed!" });
     }
   };
 
@@ -38,37 +35,35 @@ export default function Login() {
         <h1 style={styles.logo}>📝 Todo App</h1>
         <h2 style={styles.title}>Login</h2>
 
-        {error && <p style={styles.errorText}>{error}</p>}
+        {errors.root && <p style={styles.errorText}>{errors.root.message}</p>}
 
         <input
           type="email"
           placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-          style={styles.input}
+          {...register("email")}
+          style={{ ...styles.input, border: errors.email ? "1px solid #e74c3c" : "1px solid #ddd" }}
         />
+        {errors.email && <p style={styles.fieldError}>{errors.email.message}</p>}
+
         <input
           type="password"
           placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-          style={styles.input}
+          {...register("password")}
+          style={{ ...styles.input, border: errors.password ? "1px solid #e74c3c" : "1px solid #ddd" }}
         />
+        {errors.password && <p style={styles.fieldError}>{errors.password.message}</p>}
+
         <button
-          onClick={handleLogin}
-          disabled={loading}
-          style={{ ...styles.button, opacity: loading ? 0.7 : 1 }}
+          onClick={handleSubmit(onSubmit)}
+          disabled={isSubmitting}
+          style={{ ...styles.button, opacity: isSubmitting ? 0.7 : 1 }}
         >
-          {loading ? "Logging in..." : "Login"}
+          {isSubmitting ? "Logging in..." : "Login"}
         </button>
 
         <p style={styles.link}>
           Don't have an account?{" "}
-          <Link to="/register" style={styles.linkAnchor}>
-            Register now
-          </Link>
+          <Link to="/register" style={styles.linkAnchor}>Register now</Link>
         </p>
       </div>
     </div>
@@ -92,17 +87,8 @@ const styles = {
     maxWidth: 400,
     boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
   },
-  logo: {
-    textAlign: "center",
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  title: {
-    textAlign: "center",
-    color: "#333",
-    marginBottom: 24,
-    fontWeight: 600,
-  },
+  logo: { textAlign: "center", fontSize: 32, marginBottom: 8 },
+  title: { textAlign: "center", color: "#333", marginBottom: 24, fontWeight: 600 },
   errorText: {
     color: "#e74c3c",
     background: "#fde8e8",
@@ -111,12 +97,12 @@ const styles = {
     marginBottom: 16,
     fontSize: 14,
   },
+  fieldError: { color: "#e74c3c", fontSize: 12, marginTop: -8, marginBottom: 8 },
   input: {
     display: "block",
     width: "100%",
     padding: "12px 14px",
-    marginBottom: 12,
-    border: "1px solid #ddd",
+    marginBottom: 4,
     borderRadius: 8,
     fontSize: 16,
     boxSizing: "border-box",
@@ -133,16 +119,8 @@ const styles = {
     fontSize: 16,
     cursor: "pointer",
     fontWeight: 600,
-    marginTop: 8,
+    marginTop: 12,
   },
-  link: {
-    textAlign: "center",
-    marginTop: 20,
-    color: "#666",
-    fontSize: 14,
-  },
-  linkAnchor: {
-    color: "#667eea",
-    fontWeight: 600,
-  },
+  link: { textAlign: "center", marginTop: 20, color: "#666", fontSize: 14 },
+  linkAnchor: { color: "#667eea", fontWeight: 600 },
 };
