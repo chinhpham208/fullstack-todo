@@ -6,18 +6,19 @@ const { body, validationResult } = require("express-validator");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 
-const handleValidation = (req, res) => {
+const validate = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ error: errors.array()[0].msg });
+    res.status(400).json({ error: errors.array()[0].msg });
+    return false;
   }
-  return null;
+  return true;
 };
 
 const registerRules = [
-  body("name").trim().isLength({ min: 2 }).withMessage("Name must be at least 2 characters!"),
+  body("name").trim().isLength({ min: 2, max: 50 }).withMessage("Name must be 2-50 characters!"),
   body("email").isEmail().normalizeEmail().withMessage("Please enter a valid email address!"),
-  body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters!"),
+  body("password").isLength({ min: 6, max: 128 }).withMessage("Password must be 6-128 characters!"),
 ];
 
 const loginRules = [
@@ -27,8 +28,7 @@ const loginRules = [
 
 // REGISTER
 router.post("/register", registerRules, async (req, res) => {
-  const validationError = handleValidation(req, res);
-  if (validationError) return;
+  if (!validate(req, res)) return;
 
   try {
     const { name, email, password } = req.body;
@@ -56,14 +56,13 @@ router.post("/register", registerRules, async (req, res) => {
       user: { id: newUser._id, name: newUser.name, email: newUser.email },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error, please try again." });
   }
 });
 
 // LOGIN
 router.post("/login", loginRules, async (req, res) => {
-  const validationError = handleValidation(req, res);
-  if (validationError) return;
+  if (!validate(req, res)) return;
 
   try {
     const { email, password } = req.body;
@@ -90,7 +89,7 @@ router.post("/login", loginRules, async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error, please try again." });
   }
 });
 
@@ -98,9 +97,10 @@ router.post("/login", loginRules, async (req, res) => {
 router.get("/me", auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select("-password");
+    if (!user) return res.status(404).json({ error: "User not found!" });
     res.json(user);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error, please try again." });
   }
 });
 

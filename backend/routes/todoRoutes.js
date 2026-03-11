@@ -18,7 +18,7 @@ router.get("/", async (req, res) => {
     const todos = await Todo.find({ owner: req.user.userId }).sort({ createdAt: -1 });
     res.json(todos);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error, please try again." });
   }
 });
 
@@ -30,44 +30,51 @@ router.post("/", taskRules, async (req, res) => {
   }
 
   try {
-    const newTodo = new Todo({
-      task: req.body.task,
-      owner: req.user.userId,
-    });
+    const newTodo = new Todo({ task: req.body.task, owner: req.user.userId });
     await newTodo.save();
     res.status(201).json(newTodo);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: "Server error, please try again." });
   }
 });
 
-// UPDATE TODO
+// UPDATE TODO — only allow task and completed fields
 router.put("/:id", async (req, res) => {
   try {
+    const { task, completed } = req.body;
+    const update = {};
+    if (task !== undefined) {
+      if (!task.trim()) return res.status(400).json({ error: "Task cannot be empty!" });
+      if (task.trim().length > 200) return res.status(400).json({ error: "Task must be under 200 characters!" });
+      update.task = task.trim();
+    }
+    if (completed !== undefined) {
+      update.completed = Boolean(completed);
+    }
+
     const todo = await Todo.findOneAndUpdate(
       { _id: req.params.id, owner: req.user.userId },
-      req.body,
+      update,
       { new: true }
     );
-    if (!todo) {
-      return res.status(404).json({ error: "Todo not found!" });
-    }
+    if (!todo) return res.status(404).json({ error: "Todo not found!" });
     res.json(todo);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: "Server error, please try again." });
   }
 });
 
 // DELETE TODO
 router.delete("/:id", async (req, res) => {
   try {
-    await Todo.findOneAndDelete({
+    const todo = await Todo.findOneAndDelete({
       _id: req.params.id,
       owner: req.user.userId,
     });
+    if (!todo) return res.status(404).json({ error: "Todo not found!" });
     res.json({ message: "Deleted successfully!" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error, please try again." });
   }
 });
 
