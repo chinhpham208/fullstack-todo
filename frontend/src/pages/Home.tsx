@@ -1,24 +1,26 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
+import type { Todo, User } from "../types";
+import type { AxiosError } from "axios";
 
 export default function Home() {
-  const [todos, setTodos] = useState([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [newTask, setNewTask] = useState("");
   const [taskError, setTaskError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
-    if (userData) setUser(JSON.parse(userData));
+    if (userData) setUser(JSON.parse(userData) as User);
     fetchTodos();
   }, []);
 
   const fetchTodos = async () => {
     try {
-      const res = await api.get("/todos");
+      const res = await api.get<Todo[]>("/todos");
       setTodos(res.data);
     } catch {
       navigate("/login");
@@ -38,24 +40,25 @@ export default function Home() {
     }
     setTaskError("");
     try {
-      const res = await api.post("/todos", { task: newTask.trim() });
+      const res = await api.post<Todo>("/todos", { task: newTask.trim() });
       setTodos([res.data, ...todos]);
       setNewTask("");
     } catch (err) {
-      setTaskError(err.response?.data?.error || "Error adding todo!");
+      const axiosErr = err as AxiosError<{ error: string }>;
+      setTaskError(axiosErr.response?.data?.error ?? "Error adding todo!");
     }
   };
 
-  const toggleComplete = async (todo) => {
+  const toggleComplete = async (todo: Todo) => {
     try {
-      const res = await api.put(`/todos/${todo._id}`, { completed: !todo.completed });
+      const res = await api.put<Todo>(`/todos/${todo._id}`, { completed: !todo.completed });
       setTodos(todos.map((t) => (t._id === todo._id ? res.data : t)));
     } catch {
       setTaskError("Error updating todo!");
     }
   };
 
-  const deleteTodo = async (id) => {
+  const deleteTodo = async (id: string) => {
     try {
       await api.delete(`/todos/${id}`);
       setTodos(todos.filter((t) => t._id !== id));
@@ -170,7 +173,7 @@ export default function Home() {
   );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     background: "#f0f2f5",

@@ -2,7 +2,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { AxiosError } from "axios";
 import api from "../api";
+import type { AuthResponse, RegisterFormData } from "../types";
 
 const schema = yup.object({
   name: yup.string().trim().min(2, "Name must be at least 2 characters!").required("Name is required!"),
@@ -17,16 +19,17 @@ export default function Register() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: yupResolver(schema) });
+  } = useForm<RegisterFormData>({ resolver: yupResolver(schema) });
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: RegisterFormData) => {
     try {
-      const res = await api.post("/auth/register", data);
+      const res = await api.post<AuthResponse>("/auth/register", data);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/");
     } catch (err) {
-      setError("root", { message: err.response?.data?.error || "Registration failed!" });
+      const axiosErr = err as AxiosError<{ error: string }>;
+      setError("root", { message: axiosErr.response?.data?.error || "Registration failed!" });
     }
   };
 
@@ -79,7 +82,7 @@ export default function Register() {
   );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
