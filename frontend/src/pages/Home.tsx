@@ -1,8 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Layout, Typography, Button, Input, Card, Checkbox, Statistic,
+  Row, Col, Space, Empty, Spin, App as AntApp,
+} from "antd";
+import {
+  PlusOutlined, DeleteOutlined, LogoutOutlined,
+  CheckCircleOutlined, ClockCircleOutlined, UnorderedListOutlined,
+} from "@ant-design/icons";
 import api from "../api";
 import type { Todo, User } from "../types";
 import type { AxiosError } from "axios";
+
+const { Header, Content } = Layout;
+const { Title, Text } = Typography;
 
 export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -11,6 +22,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
+  const { message } = AntApp.useApp();
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -43,6 +55,7 @@ export default function Home() {
       const res = await api.post<Todo>("/todos", { task: newTask.trim() });
       setTodos([res.data, ...todos]);
       setNewTask("");
+      message.success("Task added!");
     } catch (err) {
       const axiosErr = err as AxiosError<{ error: string }>;
       setTaskError(axiosErr.response?.data?.error ?? "Error adding todo!");
@@ -54,7 +67,7 @@ export default function Home() {
       const res = await api.put<Todo>(`/todos/${todo._id}`, { completed: !todo.completed });
       setTodos(todos.map((t) => (t._id === todo._id ? res.data : t)));
     } catch {
-      setTaskError("Error updating todo!");
+      message.error("Error updating todo!");
     }
   };
 
@@ -62,8 +75,9 @@ export default function Home() {
     try {
       await api.delete(`/todos/${id}`);
       setTodos(todos.filter((t) => t._id !== id));
+      message.success("Task deleted!");
     } catch {
-      setTaskError("Error deleting todo!");
+      message.error("Error deleting todo!");
     }
   };
 
@@ -74,238 +88,133 @@ export default function Home() {
   };
 
   const pendingCount = todos.filter((t) => !t.completed).length;
+  const completedCount = todos.length - pendingCount;
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-
-        {/* Header */}
-        <div style={styles.header}>
-          <div>
-            <h1 style={styles.title}>📝 Todo App</h1>
-            {user && (
-              <p style={styles.greeting}>Hello, <strong>{user.name}</strong>! 👋</p>
-            )}
-          </div>
-          <button onClick={logout} style={styles.logoutButton}>
-            Logout
-          </button>
+    <Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+      <Header style={styles.header}>
+        <div>
+          <Title level={4} style={{ color: "white", margin: 0 }}>
+            Todo App
+          </Title>
+          {user && (
+            <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 13 }}>
+              Hello, {user.name}
+            </Text>
+          )}
         </div>
+        <Button icon={<LogoutOutlined />} onClick={logout} ghost>
+          Logout
+        </Button>
+      </Header>
 
-        {/* Stats */}
-        <div style={styles.stats}>
-          <div style={styles.statItem}>
-            <span style={styles.statNumber}>{todos.length}</span>
-            <span style={styles.statLabel}>Total</span>
-          </div>
-          <div style={styles.statItem}>
-            <span style={{ ...styles.statNumber, color: "#e74c3c" }}>{pendingCount}</span>
-            <span style={styles.statLabel}>Pending</span>
-          </div>
-          <div style={styles.statItem}>
-            <span style={{ ...styles.statNumber, color: "#2ecc71" }}>{todos.length - pendingCount}</span>
-            <span style={styles.statLabel}>Completed</span>
-          </div>
-        </div>
+      <Content style={{ padding: "24px 16px", maxWidth: 640, margin: "0 auto", width: "100%" }}>
+        <Row gutter={16} style={{ marginBottom: 24 }}>
+          <Col span={8}>
+            <Card size="small">
+              <Statistic
+                title="Total"
+                value={todos.length}
+                prefix={<UnorderedListOutlined />}
+                valueStyle={{ color: "#667eea" }}
+              />
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card size="small">
+              <Statistic
+                title="Pending"
+                value={pendingCount}
+                prefix={<ClockCircleOutlined />}
+                valueStyle={{ color: "#faad14" }}
+              />
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card size="small">
+              <Statistic
+                title="Completed"
+                value={completedCount}
+                prefix={<CheckCircleOutlined />}
+                valueStyle={{ color: "#52c41a" }}
+              />
+            </Card>
+          </Col>
+        </Row>
 
-        {/* Add form */}
-        <div style={styles.addForm}>
-          <input
+        <Space.Compact style={{ width: "100%", marginBottom: 24 }}>
+          <Input
+            size="large"
             value={newTask}
             onChange={(e) => { setNewTask(e.target.value); setTaskError(""); }}
-            onKeyDown={(e) => e.key === "Enter" && addTodo()}
-            placeholder="Enter new task... (Press Enter to add)"
-            style={{ ...styles.input, border: taskError ? "1px solid #e74c3c" : "1px solid #ddd" }}
+            onPressEnter={addTodo}
+            placeholder="Enter new task..."
+            status={taskError ? "error" : ""}
           />
-          <button onClick={addTodo} style={styles.addButton}>
-            + Add
-          </button>
-        </div>
-        {taskError && <p style={styles.taskErrorText}>{taskError}</p>}
+          <Button size="large" type="primary" icon={<PlusOutlined />} onClick={addTodo}>
+            Add
+          </Button>
+        </Space.Compact>
+        {taskError && (
+          <Text type="danger" style={{ display: "block", marginTop: -16, marginBottom: 16, fontSize: 13 }}>
+            {taskError}
+          </Text>
+        )}
 
-        {/* Todo list */}
         {loading ? (
-          <p style={styles.loadingText}>⏳ Loading...</p>
-        ) : todos.length === 0 ? (
-          <div style={styles.empty}>
-            <p style={{ fontSize: 48 }}>🎉</p>
-            <p>No tasks yet! Add your first one.</p>
+          <div style={{ textAlign: "center", padding: 60 }}>
+            <Spin size="large" />
           </div>
+        ) : todos.length === 0 ? (
+          <Card>
+            <Empty description="No tasks yet! Add your first one." />
+          </Card>
         ) : (
-          <div>
+          <Space direction="vertical" style={{ width: "100%" }} size={8}>
             {todos.map((todo) => (
-              <div
+              <Card
                 key={todo._id}
+                size="small"
                 style={{
-                  ...styles.todoItem,
-                  opacity: todo.completed ? 0.7 : 1,
-                  background: todo.completed ? "#f8f9fa" : "white",
+                  opacity: todo.completed ? 0.65 : 1,
+                  background: todo.completed ? "#fafafa" : "white",
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={todo.completed}
-                  onChange={() => toggleComplete(todo)}
-                  style={styles.checkbox}
-                />
-                <span
-                  style={{
-                    ...styles.taskName,
-                    textDecoration: todo.completed ? "line-through" : "none",
-                    color: todo.completed ? "#aaa" : "#333",
-                  }}
-                >
-                  {todo.task}
-                </span>
-                <button
-                  onClick={() => deleteTodo(todo._id)}
-                  style={styles.deleteButton}
-                  title="Delete"
-                >
-                  🗑️
-                </button>
-              </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <Checkbox
+                    checked={todo.completed}
+                    onChange={() => toggleComplete(todo)}
+                  />
+                  <Text
+                    style={{ flex: 1 }}
+                    delete={todo.completed}
+                    type={todo.completed ? "secondary" : undefined}
+                  >
+                    {todo.task}
+                  </Text>
+                  <Button
+                    type="text"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => deleteTodo(todo._id)}
+                    size="small"
+                  />
+                </div>
+              </Card>
             ))}
-          </div>
+          </Space>
         )}
-      </div>
-    </div>
+      </Content>
+    </Layout>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background: "#f0f2f5",
-    fontFamily: "Arial, sans-serif",
-    padding: "20px",
-  },
-  container: {
-    maxWidth: 600,
-    margin: "0 auto",
-  },
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 700,
-    color: "#333",
-    margin: 0,
-  },
-  greeting: {
-    color: "#666",
-    margin: "4px 0 0 0",
-    fontSize: 14,
-  },
-  logoutButton: {
-    padding: "8px 16px",
-    background: "white",
-    border: "1px solid #ddd",
-    borderRadius: 8,
-    cursor: "pointer",
-    color: "#666",
-    fontSize: 14,
-  },
-  stats: {
-    display: "flex",
-    gap: 16,
-    marginBottom: 20,
-  },
-  statItem: {
-    flex: 1,
-    background: "white",
-    borderRadius: 12,
-    padding: "16px",
-    textAlign: "center",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-  },
-  statNumber: {
-    display: "block",
-    fontSize: 32,
-    fontWeight: 700,
-    color: "#667eea",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#999",
-  },
-  addForm: {
-    display: "flex",
-    gap: 10,
-    marginBottom: 20,
-  },
-  input: {
-    flex: 1,
-    padding: "12px 16px",
-    border: "1px solid #ddd",
-    borderRadius: 10,
-    fontSize: 15,
-    outline: "none",
-    background: "white",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-  },
-  addButton: {
-    padding: "12px 20px",
     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    color: "white",
-    border: "none",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontSize: 15,
-    fontWeight: 600,
-    whiteSpace: "nowrap",
-  },
-  taskErrorText: {
-    color: "#e74c3c",
-    fontSize: 13,
-    marginTop: -12,
-    marginBottom: 12,
-  },
-  loadingText: {
-    textAlign: "center",
-    color: "#999",
-    padding: 40,
-  },
-  empty: {
-    textAlign: "center",
-    color: "#999",
-    padding: 40,
-    background: "white",
-    borderRadius: 12,
-    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-  },
-  todoItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    padding: "14px 16px",
-    marginBottom: 8,
-    borderRadius: 10,
-    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-    transition: "all 0.2s",
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    cursor: "pointer",
-    accentColor: "#667eea",
-  },
-  taskName: {
-    flex: 1,
-    fontSize: 15,
-  },
-  deleteButton: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    fontSize: 18,
-    padding: "4px",
-    borderRadius: 6,
-    opacity: 0.6,
-    transition: "opacity 0.2s",
+    padding: "0 24px",
   },
 };
