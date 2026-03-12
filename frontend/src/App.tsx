@@ -4,6 +4,8 @@ import { ConfigProvider, App as AntApp } from "antd";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import WorkspaceListPage from "./pages/WorkspaceListPage";
+import BoardPage from "./pages/BoardPage";
+import NewBoardPage from "./pages/NewBoardPage";
 import AppLayout from "./components/layout/AppLayout";
 import { WorkspaceProvider } from "./contexts/WorkspaceContext";
 
@@ -24,9 +26,9 @@ function PrivateRoute({ children }: PrivateRouteProps) {
   return token ? <>{children}</> : <Navigate to="/login" />;
 }
 
-// Placeholder pages — will be replaced in later PRs
-function BoardPlaceholder() {
-  return <div style={{ padding: 24, color: "#999" }}>Select a board from the sidebar, or create a new one.</div>;
+// Placeholder for pages coming in later PRs
+function Placeholder({ text }: { text: string }) {
+  return <div style={{ padding: 24, color: "#999" }}>{text}</div>;
 }
 
 export default function App() {
@@ -49,11 +51,11 @@ export default function App() {
             >
               <Route index element={<Navigate to="/workspaces" replace />} />
               <Route path="workspaces" element={<WorkspaceListPage />} />
-              <Route path="workspaces/:workspaceId" element={<BoardPlaceholder />} />
-              <Route path="workspaces/:workspaceId/boards/new" element={<BoardPlaceholder />} />
-              <Route path="workspaces/:workspaceId/boards/:boardId" element={<BoardPlaceholder />} />
-              <Route path="workspaces/:workspaceId/members" element={<BoardPlaceholder />} />
-              <Route path="workspaces/:workspaceId/activity" element={<BoardPlaceholder />} />
+              <Route path="workspaces/:workspaceId" element={<Placeholder text="Select a board from the sidebar, or create a new one." />} />
+              <Route path="workspaces/:workspaceId/boards/new" element={<NewBoardPage />} />
+              <Route path="workspaces/:workspaceId/boards/:boardId" element={<BoardPage />} />
+              <Route path="workspaces/:workspaceId/members" element={<Placeholder text="Team management coming soon..." />} />
+              <Route path="workspaces/:workspaceId/activity" element={<Placeholder text="Activity feed coming soon..." />} />
             </Route>
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
