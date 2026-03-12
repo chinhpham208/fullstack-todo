@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Modal, Input, Typography, Space, Tag, Button, Divider, App as AntApp } from "antd";
 import { DeleteOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import CommentSection from "./CommentSection";
 import api from "../../api";
 import type { Card } from "../../types";
 
@@ -160,6 +161,13 @@ export default function CardDetailModal({
             {description || "Click to add a description..."}
           </div>
         )}
+      </div>
+
+      <Divider />
+
+      {/* Comments */}
+      <div style={{ padding: "0 24px" }}>
+        <CommentSection cardId={card._id} />
       </div>
 
       <Divider />

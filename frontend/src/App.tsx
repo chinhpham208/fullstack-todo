@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import WorkspaceListPage from "./pages/WorkspaceListPage";
 import BoardPage from "./pages/BoardPage";
 import NewBoardPage from "./pages/NewBoardPage";
+import ActivityPage from "./pages/ActivityPage";
 import AppLayout from "./components/layout/AppLayout";
 import { WorkspaceProvider } from "./contexts/WorkspaceContext";
 
@@ -55,7 +56,7 @@ export default function App() {
               <Route path="workspaces/:workspaceId/boards/new" element={<NewBoardPage />} />
               <Route path="workspaces/:workspaceId/boards/:boardId" element={<BoardPage />} />
               <Route path="workspaces/:workspaceId/members" element={<Placeholder text="Team management coming soon..." />} />
-              <Route path="workspaces/:workspaceId/activity" element={<Placeholder text="Activity feed coming soon..." />} />
+              <Route path="workspaces/:workspaceId/activity" element={<ActivityPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
