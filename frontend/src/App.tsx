@@ -7,6 +7,7 @@ import WorkspaceListPage from "./pages/WorkspaceListPage";
 import BoardPage from "./pages/BoardPage";
 import NewBoardPage from "./pages/NewBoardPage";
 import ActivityPage from "./pages/ActivityPage";
+import MembersPage from "./pages/MembersPage";
 import AppLayout from "./components/layout/AppLayout";
 import { WorkspaceProvider } from "./contexts/WorkspaceContext";
 
@@ -27,9 +28,8 @@ function PrivateRoute({ children }: PrivateRouteProps) {
   return token ? <>{children}</> : <Navigate to="/login" />;
 }
 
-// Placeholder for pages coming in later PRs
-function Placeholder({ text }: { text: string }) {
-  return <div style={{ padding: 24, color: "#999" }}>{text}</div>;
+function WorkspaceHome() {
+  return <div style={{ padding: 24, color: "#999" }}>Select a board from the sidebar, or create a new one.</div>;
 }
 
 export default function App() {
@@ -52,10 +52,10 @@ export default function App() {
             >
               <Route index element={<Navigate to="/workspaces" replace />} />
               <Route path="workspaces" element={<WorkspaceListPage />} />
-              <Route path="workspaces/:workspaceId" element={<Placeholder text="Select a board from the sidebar, or create a new one." />} />
+              <Route path="workspaces/:workspaceId" element={<WorkspaceHome />} />
               <Route path="workspaces/:workspaceId/boards/new" element={<NewBoardPage />} />
               <Route path="workspaces/:workspaceId/boards/:boardId" element={<BoardPage />} />
-              <Route path="workspaces/:workspaceId/members" element={<Placeholder text="Team management coming soon..." />} />
+              <Route path="workspaces/:workspaceId/members" element={<MembersPage />} />
               <Route path="workspaces/:workspaceId/activity" element={<ActivityPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" />} />
