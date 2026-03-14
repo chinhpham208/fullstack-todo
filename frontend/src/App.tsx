@@ -1,8 +1,23 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ConfigProvider, App as AntApp } from "antd";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Home from "./pages/Home";
+import WorkspaceListPage from "./pages/WorkspaceListPage";
+import BoardPage from "./pages/BoardPage";
+import NewBoardPage from "./pages/NewBoardPage";
+import ActivityPage from "./pages/ActivityPage";
+import MembersPage from "./pages/MembersPage";
+import AppLayout from "./components/layout/AppLayout";
+import { WorkspaceProvider } from "./contexts/WorkspaceContext";
+
+const theme = {
+  token: {
+    colorPrimary: "#667eea",
+    borderRadius: 8,
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  },
+};
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -13,22 +28,40 @@ function PrivateRoute({ children }: PrivateRouteProps) {
   return token ? <>{children}</> : <Navigate to="/login" />;
 }
 
+function WorkspaceHome() {
+  return <div style={{ padding: 24, color: "#999" }}>Select a board from the sidebar, or create a new one.</div>;
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Home />
-            </PrivateRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+    <ConfigProvider theme={theme}>
+      <AntApp>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <WorkspaceProvider>
+                    <AppLayout />
+                  </WorkspaceProvider>
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<Navigate to="/workspaces" replace />} />
+              <Route path="workspaces" element={<WorkspaceListPage />} />
+              <Route path="workspaces/:workspaceId" element={<WorkspaceHome />} />
+              <Route path="workspaces/:workspaceId/boards/new" element={<NewBoardPage />} />
+              <Route path="workspaces/:workspaceId/boards/:boardId" element={<BoardPage />} />
+              <Route path="workspaces/:workspaceId/members" element={<MembersPage />} />
+              <Route path="workspaces/:workspaceId/activity" element={<ActivityPage />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </BrowserRouter>
+      </AntApp>
+    </ConfigProvider>
   );
 }

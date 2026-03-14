@@ -7,6 +7,13 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import authRoutes from "./routes/authRoutes";
 import todoRoutes from "./routes/todoRoutes";
+import workspaceRoutes from "./routes/workspaceRoutes";
+import boardRoutes from "./routes/boardRoutes";
+import columnRoutes from "./routes/columnRoutes";
+import cardRoutes from "./routes/cardRoutes";
+import commentRoutes from "./routes/commentRoutes";
+import activityRoutes from "./routes/activityRoutes";
+import invitationRoutes from "./routes/invitationRoutes";
 
 // Validate required env vars on startup
 const requiredEnvVars = ["MONGODB_URI", "JWT_SECRET"];
@@ -45,6 +52,13 @@ const authLimiter = rateLimit({
 // Routes
 app.use("/auth", authLimiter, authRoutes);
 app.use("/todos", todoRoutes);
+app.use("/workspaces", workspaceRoutes);
+app.use("/workspaces/:workspaceId/boards", boardRoutes);
+app.use("/workspaces/:workspaceId/activity", activityRoutes);
+app.use("/boards/:boardId/columns", columnRoutes);
+app.use("/boards/:boardId/cards", cardRoutes);
+app.use("/cards/:cardId/comments", commentRoutes);
+app.use("/invitations", invitationRoutes);
 
 // Connect MongoDB
 mongoose
