@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import auth from "../middleware/auth";
 import Invitation from "../models/Invitation";
 import Workspace from "../models/Workspace";
+import User from "../models/User";
 import { logActivity } from "../utils/logActivity";
 
 const router = Router();
@@ -10,8 +11,6 @@ router.use(auth);
 // Get pending invitations for current user's email
 router.get("/", async (req: Request, res: Response): Promise<void> => {
   try {
-    // Get user's email from the auth middleware
-    const User = (await import("../models/User")).default;
     const user = await User.findById(req.user.userId);
     if (!user) {
       res.status(404).json({ error: "User not found!" });
@@ -27,7 +26,8 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
       .populate("invitedBy", "name email");
 
     res.json(invitations);
-  } catch {
+  } catch (err) {
+    console.error("Invitation GET error:", err);
     res.status(500).json({ error: "Server error, please try again." });
   }
 });
@@ -35,7 +35,6 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
 // Accept invitation
 router.post("/:invitationId/accept", async (req: Request, res: Response): Promise<void> => {
   try {
-    const User = (await import("../models/User")).default;
     const user = await User.findById(req.user.userId);
     if (!user) {
       res.status(404).json({ error: "User not found!" });
@@ -99,7 +98,6 @@ router.post("/:invitationId/accept", async (req: Request, res: Response): Promis
 // Decline invitation
 router.post("/:invitationId/decline", async (req: Request, res: Response): Promise<void> => {
   try {
-    const User = (await import("../models/User")).default;
     const user = await User.findById(req.user.userId);
     if (!user) {
       res.status(404).json({ error: "User not found!" });
