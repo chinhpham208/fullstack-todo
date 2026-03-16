@@ -50,6 +50,12 @@ export interface IColumn {
   createdAt: Date;
 }
 
+export interface IReaction {
+  emoji: string;
+  user: Types.ObjectId;
+  createdAt: Date;
+}
+
 export interface ICard {
   title: string;
   description: string;
@@ -59,6 +65,7 @@ export interface ICard {
   assignees: Types.ObjectId[];
   createdBy: Types.ObjectId;
   completed: boolean;
+  reactions: IReaction[];
   createdAt: Date;
   updatedAt: Date;
 }

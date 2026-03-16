@@ -13,9 +13,10 @@ interface KanbanColumnProps {
   cards: Card[];
   onAddCard: (columnId: string, title: string) => void;
   onCardClick: (card: Card) => void;
+  onCardUpdate: (card: Card) => void;
 }
 
-export default function KanbanColumn({ column, cards, onAddCard, onCardClick }: KanbanColumnProps) {
+export default function KanbanColumn({ column, cards, onAddCard, onCardClick, onCardUpdate }: KanbanColumnProps) {
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
 
@@ -67,6 +68,7 @@ export default function KanbanColumn({ column, cards, onAddCard, onCardClick }: 
               key={card._id}
               card={card}
               onClick={() => onCardClick(card)}
+              onUpdate={onCardUpdate}
             />
           ))}
         </SortableContext>
