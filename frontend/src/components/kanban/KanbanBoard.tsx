@@ -46,6 +46,10 @@ export default function KanbanBoard({
     return map;
   }, [columns, cards]);
 
+  const handleCardUpdate = (updatedCard: Card) => {
+    onDataChange({ cards: cards.map((c) => c._id === updatedCard._id ? updatedCard : c) });
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const card = cards.find((c) => c._id === active.id);
@@ -186,6 +190,7 @@ export default function KanbanBoard({
                 cards={cardsByColumn[column._id] || []}
                 onAddCard={handleAddCard}
                 onCardClick={onCardClick}
+                onCardUpdate={handleCardUpdate}
               />
             ))}
         </SortableContext>
@@ -222,7 +227,7 @@ export default function KanbanBoard({
 
       <DragOverlay>
         {activeCard ? (
-          <KanbanCard card={activeCard} onClick={() => {}} />
+          <KanbanCard card={activeCard} onClick={() => {}} onUpdate={() => {}} />
         ) : null}
       </DragOverlay>
     </DndContext>

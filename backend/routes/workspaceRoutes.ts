@@ -29,6 +29,17 @@ router.post("/", nameRules, async (req: Request, res: Response): Promise<void> =
   if (!validate(req, res)) return;
   try {
     const { name, description } = req.body as { name: string; description?: string };
+
+    // Check duplicate name for this user
+    const existing = await Workspace.findOne({
+      "members.user": req.user.userId,
+      name: { $regex: new RegExp(`^${name}$`, "i") },
+    });
+    if (existing) {
+      res.status(400).json({ error: "Workspace with this name already exists!" });
+      return;
+    }
+
     const workspace = await Workspace.create({
       name,
       description: description || "",

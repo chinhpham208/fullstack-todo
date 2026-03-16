@@ -27,6 +27,16 @@ router.post("/", [
   try {
     const { name } = req.body as { name: string };
 
+    // Check duplicate name in board
+    const existing = await Column.findOne({
+      board: req.params.boardId,
+      name: { $regex: new RegExp(`^${name}$`, "i") },
+    });
+    if (existing) {
+      res.status(400).json({ error: "Column with this name already exists in this board!" });
+      return;
+    }
+
     // Find max position in this board
     const lastColumn = await Column.findOne({ board: req.params.boardId })
       .sort({ position: -1 });

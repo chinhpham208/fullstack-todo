@@ -47,6 +47,12 @@ export interface Column {
   createdAt: string;
 }
 
+export interface Reaction {
+  emoji: string;
+  user: User;
+  createdAt: string;
+}
+
 export interface Card {
   _id: string;
   title: string;
@@ -57,6 +63,7 @@ export interface Card {
   assignees: User[];
   createdBy: User;
   completed: boolean;
+  reactions: Reaction[];
   createdAt: string;
   updatedAt: string;
 }

@@ -1,5 +1,11 @@
 import { Schema, model } from "mongoose";
-import type { ICard } from "../types";
+import type { ICard, IReaction } from "../types";
+
+const reactionSchema = new Schema<IReaction>({
+  emoji: { type: String, required: true },
+  user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  createdAt: { type: Date, default: Date.now },
+});
 
 const cardSchema = new Schema<ICard>(
   {
@@ -11,6 +17,7 @@ const cardSchema = new Schema<ICard>(
     assignees: [{ type: Schema.Types.ObjectId, ref: "User" }],
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     completed: { type: Boolean, default: false },
+    reactions: [reactionSchema],
   },
   { timestamps: true }
 );

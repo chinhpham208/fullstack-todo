@@ -220,4 +220,75 @@ router.delete("/:cardId", async (req: Request, res: Response): Promise<void> => 
   }
 });
 
+// Add reaction to card
+router.post("/:cardId/reactions", [
+  body("emoji").trim().isLength({ min: 1, max: 10 }).withMessage("Emoji is required!"),
+], async (req: Request, res: Response): Promise<void> => {
+  if (!validate(req, res)) return;
+  try {
+    const { emoji } = req.body as { emoji: string };
+
+    const card = await Card.findOne({ _id: req.params.cardId, board: req.params.boardId });
+    if (!card) {
+      res.status(404).json({ error: "Card not found!" });
+      return;
+    }
+
+    // Remove existing reaction from this user with same emoji
+    card.reactions = card.reactions.filter(
+      (r) => !(r.emoji === emoji && r.user.toString() === req.user.userId)
+    );
+
+    // Add new reaction
+    card.reactions.push({
+      emoji,
+      user: req.user.userId as unknown as import("mongoose").Types.ObjectId,
+      createdAt: new Date(),
+    });
+
+    await card.save();
+
+    const populated = await Card.findById(card._id)
+      .populate("reactions.user", "name email")
+      .populate("assignees", "name email")
+      .populate("createdBy", "name email");
+
+    res.json(populated);
+  } catch {
+    res.status(500).json({ error: "Server error, please try again." });
+  }
+});
+
+// Remove reaction from card
+router.delete("/:cardId/reactions", [
+  body("emoji").trim().isLength({ min: 1, max: 10 }).withMessage("Emoji is required!"),
+], async (req: Request, res: Response): Promise<void> => {
+  if (!validate(req, res)) return;
+  try {
+    const { emoji } = req.body as { emoji: string };
+
+    const card = await Card.findOne({ _id: req.params.cardId, board: req.params.boardId });
+    if (!card) {
+      res.status(404).json({ error: "Card not found!" });
+      return;
+    }
+
+    // Remove reaction
+    card.reactions = card.reactions.filter(
+      (r) => !(r.emoji === emoji && r.user.toString() === req.user.userId)
+    );
+
+    await card.save();
+
+    const populated = await Card.findById(card._id)
+      .populate("reactions.user", "name email")
+      .populate("assignees", "name email")
+      .populate("createdBy", "name email");
+
+    res.json(populated);
+  } catch {
+    res.status(500).json({ error: "Server error, please try again." });
+  }
+});
+
 export default router;

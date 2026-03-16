@@ -1,17 +1,24 @@
+import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Card as AntCard, Typography, Avatar, Tooltip, Space } from "antd";
-import { CheckCircleFilled, MessageOutlined } from "@ant-design/icons";
+import { Card as AntCard, Typography, Avatar, Tooltip, Space, Popover, Button } from "antd";
+import { CheckCircleFilled, MessageOutlined, SmileOutlined } from "@ant-design/icons";
 import type { Card } from "../../types";
+import api from "../../api";
 
 const { Text } = Typography;
+
+const EMOJI_LIST = ["✅", "🔥", "🤔", "👀", "💭", "🚀", "👍", "👎"];
 
 interface KanbanCardProps {
   card: Card;
   onClick: () => void;
+  onUpdate: (card: Card) => void;
 }
 
-export default function KanbanCard({ card, onClick }: KanbanCardProps) {
+export default function KanbanCard({ card, onClick, onUpdate }: KanbanCardProps) {
+  const [loading, setLoading] = useState(false);
+
   const {
     attributes,
     listeners,
@@ -27,6 +34,41 @@ export default function KanbanCard({ card, onClick }: KanbanCardProps) {
     opacity: isDragging ? 0.5 : 1,
     cursor: "grab",
   };
+
+  const handleReaction = async (emoji: string) => {
+    setLoading(true);
+    try {
+      const res = await api.post<Card>(`/boards/${card.board}/cards/${card._id}/reactions`, { emoji });
+      onUpdate(res.data);
+    } catch (err) {
+      console.error("Failed to add reaction:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reactionContent = (
+    <Space size={4}>
+      {EMOJI_LIST.map((emoji) => (
+        <Button
+          key={emoji}
+          type="text"
+          size="small"
+          onClick={() => handleReaction(emoji)}
+          loading={loading}
+          style={{ fontSize: 16, padding: "2px 6px" }}
+        >
+          {emoji}
+        </Button>
+      ))}
+    </Space>
+  );
+
+  // Group reactions by emoji
+  const groupedReactions = card.reactions?.reduce((acc, r) => {
+    acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>) || {};
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
@@ -54,22 +96,60 @@ export default function KanbanCard({ card, onClick }: KanbanCardProps) {
           </Text>
         </div>
 
-        {(card.assignees.length > 0 || card.description) && (
-          <Space style={{ marginTop: 8 }} size={4}>
-            {card.description && (
-              <MessageOutlined style={{ fontSize: 12, color: "#bfbfbf" }} />
-            )}
-            <Avatar.Group size="small" max={{ count: 3 }}>
-              {card.assignees.map((a) => (
-                <Tooltip key={a.id || a._id} title={a.name}>
-                  <Avatar size="small" style={{ backgroundColor: "#667eea", fontSize: 10 }}>
-                    {a.name.charAt(0).toUpperCase()}
-                  </Avatar>
-                </Tooltip>
-              ))}
-            </Avatar.Group>
+        <Space style={{ marginTop: 8 }} size={4}>
+          {card.description && (
+            <MessageOutlined style={{ fontSize: 12, color: "#bfbfbf" }} />
+          )}
+          <Avatar.Group size="small" max={{ count: 3 }}>
+            {card.assignees.map((a) => (
+              <Tooltip key={a.id || a._id} title={a.name}>
+                <Avatar size="small" style={{ backgroundColor: "#667eea", fontSize: 10 }}>
+                  {a.name.charAt(0).toUpperCase()}
+                </Avatar>
+              </Tooltip>
+            ))}
+          </Avatar.Group>
+        </Space>
+
+        {/* Reactions display */}
+        {Object.keys(groupedReactions).length > 0 && (
+          <Space style={{ marginTop: 6 }} size={4}>
+            {Object.entries(groupedReactions).map(([emoji, count]) => (
+              <Tooltip key={emoji} title={`${count} reaction${count > 1 ? "s" : ""}`}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    background: "#f5f5f5",
+                    padding: "2px 6px",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReaction(emoji);
+                  }}
+                >
+                  {emoji} {count}
+                </span>
+              </Tooltip>
+            ))}
           </Space>
         )}
+
+        {/* Add reaction button */}
+        <Popover content={reactionContent} trigger="click" placement="bottom">
+          <Button
+            type="text"
+            size="small"
+            icon={<SmileOutlined />}
+            style={{
+              marginTop: 6,
+              fontSize: 12,
+              color: "#bfbfbf",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </Popover>
       </AntCard>
     </div>
   );
